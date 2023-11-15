@@ -1,70 +1,59 @@
-def print_matrx(matrix):
-    for row in matrix:
-        print()
-        # print("-+" * 9)
-        print("|", end = "")
-        for col in row:
-            print (col, end="|")
-    print()
-
-
-def is_valid(puzzle, row, col, num):
-    # Check if the number is not repeated in the current row, column and 3x3 grid
-    for i in range(9):
-        if puzzle[row][i] == num or puzzle[i][col] == num:
+def is_valid(board, row, col, num):
+    # Check if the number is not repeated in the row, column and 3x3 subgrid
+    for x in range(9):
+        if board[row][x] == num or board[x][col] == num:
             return False
 
     start_row, start_col = 3 * (row // 3), 3 * (col // 3)
     for i in range(3):
         for j in range(3):
-            if puzzle[start_row + i][start_col + j] == num:
+            if board[i + start_row][j + start_col] == num:
                 return False
-
     return True
 
-def solve_sudoku(puzzle):
-    empty = find_empty(puzzle)
+
+def solve_sudoku(board):
+    empty = find_empty_location(board)
     if not empty:
         return True  # Puzzle solved
     row, col = empty
 
     for num in range(1, 10):
-        for row in range(0,9):
-            for col in range(0,9):
-                if is_valid(puzzle, row, col, num):
-                    puzzle[row][col] = num
-
-                    if solve_sudoku(puzzle):
-                        return True
-
-                    puzzle[row][col] = 0  # Backtrack
-
+        if is_valid(board, row, col, num):
+            board[row][col] = num
+            if solve_sudoku(board):
+                return True
+            board[row][col] = 0  # Backtrack
     return False
 
-def find_empty(puzzle):
-    for i in range(len(puzzle)):
-        for j in range(len(puzzle[0])):
-            if puzzle[i][j] == 0:
-                return (i, j)  # row, col
+
+def find_empty_location(board):
+    for i in range(9):
+        for j in range(9):
+            if board[i][j] == 0:
+                return i, j
     return None
 
-# Define a Sudoku puzzle
-puzzle = [[0, 0, 0, 0, 0, 0, 0, 0, 0],
-     [0, 0, 0, 0, 0, 0, 0, 0, 0],
-     [0, 0, 0, 0, 0, 0, 0, 0, 0],
-     [0, 0, 0, 0, 0, 0, 0, 0, 0],
-     [0, 0, 0, 0, 0, 0, 0, 0, 0],
-     [0, 0, 0, 0, 0, 0, 0, 0, 0],
-     [0, 0, 0, 0, 0, 0, 0, 0, 0],
-     [0, 0, 0, 0, 0, 0, 0, 0, 0],
-     [0, 0, 0, 0, 0, 0, 0, 0, 0]
-     ]
 
-if __name__ == '__main__':
-    # Solve the puzzle
-    if solve_sudoku(puzzle):
-        solved_puzzle = puzzle
-    else:
-        solved_puzzle = "No solution exists"
+def print_board(board):
+    for row in board:
+        print(" ".join(map(str, row)))
 
-    print_matrx(solved_puzzle)
+
+# Example Sudoku puzzle
+sudoku_board = [
+    [5, 3, 0, 0, 7, 0, 0, 0, 0],
+    [6, 0, 0, 1, 9, 5, 0, 0, 0],
+    [0, 9, 8, 0, 0, 0, 0, 6, 0],
+    [8, 0, 0, 0, 6, 0, 0, 0, 3],
+    [4, 0, 0, 8, 0, 3, 0, 0, 1],
+    [7, 0, 0, 0, 2, 0, 0, 0, 6],
+    [0, 6, 0, 0, 0, 0, 2, 8, 0],
+    [0, 0, 0, 4, 1, 9, 0, 0, 5],
+    [0, 0, 0, 0, 8, 0, 0, 7, 9]
+]
+
+if solve_sudoku(sudoku_board):
+    print_board(sudoku_board)
+else:
+    print("No solution exists")

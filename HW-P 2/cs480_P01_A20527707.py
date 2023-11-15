@@ -7,20 +7,71 @@ def check_constrains(matrix, contrains=None):
 
 
 # OPTION 1 BRUTE FORCE
-def brute_force(matrix):
-    counter = 0
+def brute_force(matrix, count):
+    print_matrx(matrix)
+
     for i in range(1, 10):
         for row in range(0, 9):
             for col in range(0, 9):
-                counter = counter + 1
-                matrix[row][col] = i
-                # check if constraint violated
-                if check_constrains(matrix):
-                    matrix[row][col] = 0
-                # if constaint violated reset
-                print_matrx(matrix)
-    print(counter)
+                if is_valid(matrix, i, row, col):
+                    # put the number in
+                    matrix[row][col] = i
+                    can_solve, count = brute_force(matrix, count + 1)
+                    if can_solve:
+                        return True, count
+                matrix[row][col] = 0
 
+    return False, count
+
+
+# option 2 backtracking - resource: https://www.youtube.com/watch?v=tvP_FZ-D9Ng
+def find_next_empty(matrix):
+    for i in range(len(matrix)):
+        for j in range(len(matrix[i])):
+            # return i,j if 0
+            if matrix[i][j] == 0:
+                return i, j
+    return None, None
+
+
+def is_valid(matrix, guess, row, col):
+    # all rows must have different num
+    if guess in matrix[row]:
+        return False
+    for i in range(len(matrix)):
+        if matrix[i][col] == guess:
+            return False
+    # all boxes must have different num
+    row_start = (row // 3) * 3
+    col_start = (col // 3) * 3
+    for i in range(row_start, row_start + 3):
+        for j in range(col_start, col_start + 3):
+            if matrix[i][j] == guess:
+                return False
+    return True
+
+
+def backtracking(matrix, count):
+    print_matrx(matrix)
+    row, col = find_next_empty(matrix)
+    if row is None:
+        # matrix is full
+        return True, count
+
+    for i in range(1, 10):
+        if is_valid(matrix, i, row, col):
+            # put the number in
+            matrix[row][col] = i
+            can_solve, count = backtracking(matrix, count + 1)
+            if can_solve:
+                return True, count
+        matrix[row][col] = 0
+
+    return False, count
+
+
+# OPTION 3 MRV
+# mrv is the cell with the most rows, columns, box cells filled
 
 # OPTION 4 CHECK
 def check_correct(matrix):
@@ -55,18 +106,23 @@ def check_correct(matrix):
     return True
 
 
+def print_row_divider():
+    print("+-------+-------+-------+")
+
+
 def print_matrx(matrix):
-    print("print matrix")
+    print_row_divider()
     for i in range(len(matrix)):
         for j in range(len(matrix[i])):
+            if j == 0:
+                print("|", end=" ")
             print(matrix[i][j], end=" ")
-            if j == 2 or j == 5:
+            if j == 2 or j == 5 or j == 8:
                 print("|", end=" ")
         print()
         if i == 2 or i == 5:
-            print("------+-------+-------")
-
-
+            print_row_divider()
+    print_row_divider()
 
 
 # This function prints the details at the start of the program containing the user param inputs
@@ -90,18 +146,22 @@ def print_cl_error():
     sys.exit()
 
 
-def input_to_matrix():
-    input = '''X,6,X,2,X,4,X,5,X
-4,7,X,X,6,X,X,8,3
-X,X,5,X,7,X,1,X,X
-9,X,X,1,X,3,X,X,2
-X,1,2,X,X,X,3,4,X
-6,X,X,7,X,9,X,X,8
-X,X,6,X,8,X,7,X,X
-1,4,X,X,9,X,X,2,5
-X,8,X,3,X,5,X,9,X
-'''
-    return 0
+def input_to_matrix(input):
+    # input = '''X,6,X,2,X,4,X,5,X
+    # 4,7,X,X,6,X,X,8,3
+    # X,X,5,X,7,X,1,X,X
+    # 9,X,X,1,X,3,X,X,2
+    # X,1,2,X,X,X,3,4,X
+    # 6,X,X,7,X,9,X,X,8
+    # X,X,6,X,8,X,7,X,X
+    # 1,4,X,X,9,X,X,2,5
+    # X,8,X,3,X,5,X,9,X
+    # '''
+    replaced_input = input.replace('X', '0')
+    rows = replaced_input.split('\n')
+    for i in range(len(rows)):
+        rows[i] = rows[i].split(',')
+    return rows
 
 
 if __name__ == '__main__':
@@ -122,7 +182,7 @@ if __name__ == '__main__':
                 # read file and convert to matrix
                 file = open(input_file, 'r')
                 # convert to matrix
-                input_to_matrix(input)
+                matrix = input_to_matrix(input)
                 algorithm = int(algorithm)
 
     else:
@@ -137,7 +197,7 @@ if __name__ == '__main__':
         #          [5, 3, 1, 6, 4, 2, 9, 7, 8],
         #          [6, 4, 2, 9, 7, 8, 5, 3, 1],
         #          [9, 7, 8, 5, 3, 1, 6, 4, 2]]
-        # partial sudoku
+        # empty sudoku
         matrix = [[0, 0, 0, 0, 0, 0, 0, 0, 0],
                   [0, 0, 0, 0, 0, 0, 0, 0, 0],
                   [0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -151,14 +211,15 @@ if __name__ == '__main__':
     print_details(algorithm, input_file)
     print_matrx(matrix)
     if algorithm == 1:
-        brute_force(matrix)
+        is_solvable, count = brute_force(matrix, 0)
     elif algorithm == 2:
-        print("DO BRUTE FORCE")
+        is_solvable, count = backtracking(matrix, 0)
+        print(count)
     elif algorithm == 3:
         print("DO BRUTE FORCE")
     elif algorithm == 4:
         corr = check_correct(matrix)
         if corr:
-            print("This is a valid, solved, Sudoku puzzle.")
+            print("This is a valid, solved, Sudoku matrix.")
         else:
-            print("ERROR: This is NOT a solved Sudoku puzzle.")
+            print("ERROR: This is NOT a solved Sudoku matrix.")
