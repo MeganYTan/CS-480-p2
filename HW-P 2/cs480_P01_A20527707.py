@@ -78,21 +78,29 @@ def find_all_empty(matrix):
             if matrix[i][j] == 0:
                 empty_cells.append((i,j))
     return empty_cells
+
+
 def find_cell_domain(matrix,row_index,col_index):
-    cell_domain = set([1,2,3,4,5,6,7,8,9])
-    for row in matrix[row_index]:
-        cell_domain.remove(row)
-    for col in matrix[row_index][col_index]:
-        cell_domain.remove(col)
+    cell_domain = {1,2,3,4,5,6,7,8,9}
+    # check rows
+    # check cols
+    # check box
+    for col in matrix[row_index]:
+        if col != 0 and col in cell_domain:
+            cell_domain.remove(col)
+    for i in range(len(matrix)):
+        cell_val = matrix[i][col_index]
+        if cell_val != 0 and cell_val in cell_domain:
+            cell_domain.remove(cell_val)
     row_start = (row_index // 3) * 3
     col_start = (col_index // 3) * 3
     for i in range(row_start, row_start + 3):
         for j in range(col_start, col_start + 3):
-            if matrix[i][j] == guess:
-                return False
-    # check rows
-    # check cols
-    # check box
+            cell_val = matrix[i][j]
+            if cell_val != 0 and cell_val in cell_domain:
+                cell_domain.remove(cell_val)
+    return cell_domain
+
 # #return matrix in the size of sudoku board that is the domain for each cell
 # def find_cell_domains(matrix,empty_cells):
 #     cell_domain = [1,2,3,4,5,6,7,8,9]
@@ -102,17 +110,20 @@ def find_cell_domain(matrix,row_index,col_index):
 
 def find_mrv_cell(matrix, empty_cells):
     min = 9 # max 9 option so set min to 9
-    min_cell = None
+    min_cell = None, None
     # iterate through
-    for row in matrix:
-        for col in row:
-            if len(domain[row][col]) < min:
-                min = len(domain[row][col])
-                min_cell = row,col
+    for empty_cell in empty_cells:
+        row_index = empty_cell[0]
+        col_index = empty_cell[1]
+        cell_domain = find_cell_domain(matrix,row_index, col_index)
+        if len(cell_domain) <= min:
+            min = len(cell_domain)
+            min_cell = row_index,col_index
+    print(min_cell)
     return min_cell
 
 def forward_check(matrix):
-    return None
+    return None, None
 
 def mrv(matrix, count):
     print_matrx(matrix)
@@ -126,7 +137,7 @@ def mrv(matrix, count):
         if is_valid(matrix, i, row, col):
             # put the number in
             matrix[row][col] = i
-            can_solve, count = backtracking(matrix, count + 1)
+            can_solve, count = mrv(matrix, count + 1)
             if can_solve:
                 return True, count
         matrix[row][col] = 0
@@ -228,7 +239,7 @@ def input_to_matrix(input):
 
 
 if __name__ == '__main__':
-    algorithm = 1  # 1 brute, 2 CSP, 3 CSP MRV, 4 test
+    algorithm = 3  # 1 brute, 2 CSP, 3 CSP MRV, 4 test
     input_file = "N/A"
 
     # if ran from command line
@@ -279,7 +290,8 @@ if __name__ == '__main__':
         is_solvable, count = backtracking(matrix, 0)
         print(count)
     elif algorithm == 3:
-        mrv(matrix)
+        is_solvable, count  = mrv(matrix,0)
+        print(count)
     elif algorithm == 4:
         corr = check_correct(matrix)
         if corr:
