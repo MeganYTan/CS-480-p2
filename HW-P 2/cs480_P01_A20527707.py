@@ -1,11 +1,6 @@
 from math import floor
 import sys
 
-
-def check_constrains(matrix, contrains=None):
-    return not check_correct(matrix)
-
-
 # OPTION 1 BRUTE FORCE
 def brute_force(matrix, count):
     print_matrx(matrix)
@@ -14,10 +9,12 @@ def brute_force(matrix, count):
         for row in range(0, 9):
             for col in range(0, 9):
                 if is_valid(matrix, i, row, col):
+                    print("is valid")
                     # put the number in
                     matrix[row][col] = i
                     can_solve, count = brute_force(matrix, count + 1)
                     if can_solve:
+                        print("can solve")
                         return True, count
                 matrix[row][col] = 0
 
@@ -72,6 +69,69 @@ def backtracking(matrix, count):
 
 # OPTION 3 MRV
 # mrv is the cell with the most rows, columns, box cells filled
+# keep track of domain of each cell instead
+def find_all_empty(matrix):
+    empty_cells = []
+    for i in range(len(matrix)):
+        for j in range(len(matrix[i])):
+            # return i,j if 0
+            if matrix[i][j] == 0:
+                empty_cells.append((i,j))
+    return empty_cells
+def find_cell_domain(matrix,row_index,col_index):
+    cell_domain = set([1,2,3,4,5,6,7,8,9])
+    for row in matrix[row_index]:
+        cell_domain.remove(row)
+    for col in matrix[row_index][col_index]:
+        cell_domain.remove(col)
+    row_start = (row_index // 3) * 3
+    col_start = (col_index // 3) * 3
+    for i in range(row_start, row_start + 3):
+        for j in range(col_start, col_start + 3):
+            if matrix[i][j] == guess:
+                return False
+    # check rows
+    # check cols
+    # check box
+# #return matrix in the size of sudoku board that is the domain for each cell
+# def find_cell_domains(matrix,empty_cells):
+#     cell_domain = [1,2,3,4,5,6,7,8,9]
+#     # for cell in empty_cells:
+#     #
+#     return []
+
+def find_mrv_cell(matrix, empty_cells):
+    min = 9 # max 9 option so set min to 9
+    min_cell = None
+    # iterate through
+    for row in matrix:
+        for col in row:
+            if len(domain[row][col]) < min:
+                min = len(domain[row][col])
+                min_cell = row,col
+    return min_cell
+
+def forward_check(matrix):
+    return None
+
+def mrv(matrix, count):
+    print_matrx(matrix)
+    empty_cells = find_all_empty(matrix)
+    row, col = find_mrv_cell(matrix, empty_cells)
+    if row is None:
+        # matrix is full
+        return True, count
+
+    for i in range(1, 10):
+        if is_valid(matrix, i, row, col):
+            # put the number in
+            matrix[row][col] = i
+            can_solve, count = backtracking(matrix, count + 1)
+            if can_solve:
+                return True, count
+        matrix[row][col] = 0
+
+    return False, count
 
 # OPTION 4 CHECK
 def check_correct(matrix):
@@ -106,6 +166,25 @@ def check_correct(matrix):
     return True
 
 
+
+
+
+# This function prints the details at the start of the program containing the user param inputs
+def print_details(algorithm, input_file):
+    algorithm_string = ""
+    if algorithm == 1:
+        algorithm_string = "Brute Force"
+    elif algorithm == 2:
+        algorithm_string = "CSP Back Tracking"
+    elif algorithm == 3:
+        algorithm_string = "CSP with forward-checking and MRV heuristics"
+    elif algorithm == 4:
+        algorithm_string = "Check if Sudoku is correct"
+    print('Tan, Megan, A20527707 solution:'
+          '\nInput File: ', input_file,
+          '\nAlgorithm: ', algorithm_string)
+
+
 def print_row_divider():
     print("+-------+-------+-------+")
 
@@ -123,22 +202,6 @@ def print_matrx(matrix):
         if i == 2 or i == 5:
             print_row_divider()
     print_row_divider()
-
-
-# This function prints the details at the start of the program containing the user param inputs
-def print_details(algorithm, input_file):
-    algorithm_string = ""
-    if algorithm == 1:
-        algorithm_string = "Brute Force"
-    elif algorithm == 2:
-        algorithm_string = "CSP Back Tracking"
-    elif algorithm == 3:
-        algorithm_string = "CSP with forward-checking and MRV heuristics"
-    elif algorithm == 4:
-        algorithm_string = "Check if Sudoku is correct"
-    print('Tan, Megan, A20527707 solution:'
-          '\nInput File: ', input_file,
-          '\nAlgorithm: ', algorithm_string)
 
 
 def print_cl_error():
@@ -216,7 +279,7 @@ if __name__ == '__main__':
         is_solvable, count = backtracking(matrix, 0)
         print(count)
     elif algorithm == 3:
-        print("DO BRUTE FORCE")
+        mrv(matrix)
     elif algorithm == 4:
         corr = check_correct(matrix)
         if corr:
