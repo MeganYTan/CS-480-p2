@@ -123,25 +123,23 @@ def forward_check(matrix, empty_cells, domain):
     new_domain = copy.deepcopy(domain)
     for cell in empty_cells:
         row, col = cell
-        new_cell_domain = find_cell_domain(matrix, row, col)
-        # values = new_domain[(row, col)]
-        # # Check row
-        # for j in range(9):
-        #     if matrix[row][j] in values:
-        #         values.remove(matrix[row][j])
-        # # Check column
-        # for i in range(9):
-        #     if matrix[i][col] in values:
-        #         values.remove(matrix[i][col])
-        # # Check box
-        # box_row = (row // 3) * 3
-        # box_col = (col // 3) * 3
-        # for i in range(box_row, box_row + 3):
-        #     for j in range(box_col, box_col + 3):
-        #         if matrix[i][j] in values:
-        #             values.remove(matrix[i][j])
-        # new_domain[(row, col)] = values
-        new_domain[(row, col)] = new_cell_domain
+        values = new_domain[(row, col)]
+        # Check row
+        for j in range(9):
+            if matrix[row][j] in values:
+                values.remove(matrix[row][j])
+        # Check column
+        for i in range(9):
+            if matrix[i][col] in values:
+                values.remove(matrix[i][col])
+        # Check box
+        box_row = (row // 3) * 3
+        box_col = (col // 3) * 3
+        for i in range(box_row, box_row + 3):
+            for j in range(box_col, box_col + 3):
+                if matrix[i][j] in values:
+                    values.remove(matrix[i][j])
+        new_domain[(row, col)] = values
     return new_domain
 # forward check, take empty cell, row/col, domain, matrix
 # def forward_check(matrix, empty_cells, domain, cell):
@@ -192,6 +190,7 @@ def mrv(matrix, empty_cells, domain, count):
         #  place each value in the mrv cell and forward check
         matrix[row][col] = value
         empty_cells.remove(cell)
+
         new_domain = forward_check(matrix, empty_cells, domain)
 
         if is_valid_mrv(domain, empty_cells): #new_empty_cells
