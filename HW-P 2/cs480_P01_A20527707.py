@@ -3,6 +3,7 @@ import sys
 import copy
 # import pandas
 import csv
+have_printed = False
 # OPTION 1 BRUTE FORCE
 def brute_force(matrix, count):
     print_matrx(matrix)
@@ -113,38 +114,70 @@ def find_mrv_cell(empty_cells,domain):
         if len(cell_domain) < min:
             min = len(cell_domain)
             min_cell = cell
+    print(min_cell)
     return min_cell
 
 
-# forward check, take empty cell, row/col, domain, matrix
-def forward_check(matrix, empty_cells, domain, cell):
-    new_domain = copy.deepcopy(domain)
-    cell_row = cell[0]
-    cell_col = cell[1]
-    value_to_remove = matrix[cell_row][cell_col]
-    for check_cell in empty_cells:
-        check_cell_row = check_cell[0]
-        check_cell_col = check_cell[1]
-        check_cell_domain = new_domain[(check_cell_row, check_cell_col)]
-        # check row
-        if check_cell_row == cell_row and value_to_remove in check_cell_domain:
-           check_cell_domain.remove(value_to_remove)
-        # check col
-        if check_cell_col == cell_col and value_to_remove in check_cell_domain:
-            check_cell_domain.remove(value_to_remove)
-        # check box
-        box_row = (cell_row // 3) * 3
-        box_col = (cell_col // 3) * 3
-        for i in range(box_row, box_row + 3):
-            for j in range(box_col, box_col+3):
-                if check_cell_row == i and check_cell_col == j and value_to_remove in check_cell_domain:
-                    check_cell_domain.remove(value_to_remove)
-        new_domain[(check_cell_row, check_cell_col)] = check_cell_domain
-    return new_domain
 
-def is_valid_mrv():
+def forward_check(matrix, empty_cells, domain):
+    new_domain = copy.deepcopy(domain)
+    for cell in empty_cells:
+        row, col = cell
+        new_cell_domain = find_cell_domain(matrix, row, col)
+        # values = new_domain[(row, col)]
+        # # Check row
+        # for j in range(9):
+        #     if matrix[row][j] in values:
+        #         values.remove(matrix[row][j])
+        # # Check column
+        # for i in range(9):
+        #     if matrix[i][col] in values:
+        #         values.remove(matrix[i][col])
+        # # Check box
+        # box_row = (row // 3) * 3
+        # box_col = (col // 3) * 3
+        # for i in range(box_row, box_row + 3):
+        #     for j in range(box_col, box_col + 3):
+        #         if matrix[i][j] in values:
+        #             values.remove(matrix[i][j])
+        # new_domain[(row, col)] = values
+        new_domain[(row, col)] = new_cell_domain
+    return new_domain
+# forward check, take empty cell, row/col, domain, matrix
+# def forward_check(matrix, empty_cells, domain, cell):
+#     new_domain = copy.deepcopy(domain)
+#     cell_row = cell[0]
+#     cell_col = cell[1]
+#     value_to_remove = matrix[cell_row][cell_col]
+#     for check_cell in empty_cells:
+#         check_cell_row = check_cell[0]
+#         check_cell_col = check_cell[1]
+#         check_cell_domain = new_domain[(check_cell_row, check_cell_col)]
+#         # check row
+#         if check_cell_row == cell_row and value_to_remove in check_cell_domain:
+#            check_cell_domain.remove(value_to_remove)
+#         # check col
+#         if check_cell_col == cell_col and value_to_remove in check_cell_domain:
+#             check_cell_domain.remove(value_to_remove)
+#         # check box
+#         box_row = (cell_row // 3) * 3
+#         box_col = (cell_col // 3) * 3
+#         for i in range(box_row, box_row + 3):
+#             for j in range(box_col, box_col+3):
+#                 if check_cell_row == i and check_cell_col == j and value_to_remove in check_cell_domain:
+#                     check_cell_domain.remove(value_to_remove)
+#         new_domain[(check_cell_row, check_cell_col)] = check_cell_domain
+#     return new_domain
+
+def is_valid_mrv(domain, empty_cells):
     # domain cannot be empty
+    # return all(len(domain[cell]) > 0 for cell in empty_cells)
+    for cell in empty_cells:
+        if len(domain[cell]) == 0:
+            return False
     return True
+
+
 def mrv(matrix, empty_cells, domain, count):
     print_matrx(matrix)
     if not empty_cells:
@@ -159,11 +192,13 @@ def mrv(matrix, empty_cells, domain, count):
         #  place each value in the mrv cell and forward check
         matrix[row][col] = value
         empty_cells.remove(cell)
-        new_domain = forward_check(matrix, empty_cells, domain, cell)
-        if is_valid_mrv():
-            result = mrv(matrix, empty_cells, new_domain, count + 1)
+        new_domain = forward_check(matrix, empty_cells, domain)
+
+        if is_valid_mrv(domain, empty_cells): #new_empty_cells
+            result, count = mrv(matrix, empty_cells, new_domain, count + 1)
             if result:
                 return True, count
+            # back track
             matrix[row][col] = 0
             empty_cells.append(cell)
     return False, count
@@ -262,7 +297,7 @@ def init_matrix(input_file_name):
 
 if __name__ == '__main__':
     algorithm = 3  # 1 brute, 2 CSP, 3 CSP MRV, 4 test
-    input_file = "testcase1.csv"
+    input_file = "testcase2.csv"
     # matrix =[[1, 2, 3, 4, 5, 6, 7, 8, 9],
     #          [4, 5, 6, 7, 8, 9, 1, 2, 3],
     #          [7, 8, 9, 1, 2, 3, 4, 5, 6],
@@ -273,7 +308,7 @@ if __name__ == '__main__':
     #          [6, 4, 2, 9, 7, 8, 5, 3, 1],
     #          [9, 7, 8, 5, 3, 1, 6, 4, 2]]
     # empty sudoku
-    matrix = [[2, 3, 0, 0, 0, 0, 0, 0, 0],
+    matrix = [[6, 0, 0, 0, 4, 0, 0, 2, 0],
               [0, 0, 0, 0, 0, 0, 0, 0, 0],
               [0, 0, 0, 0, 0, 0, 0, 0, 0],
               [0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -283,7 +318,7 @@ if __name__ == '__main__':
               [0, 0, 0, 0, 0, 0, 0, 0, 0],
               [0, 0, 0, 0, 0, 0, 0, 0, 0]
               ]
-    matrix = init_matrix(input_file)
+    # matrix = init_matrix(input_file)
     # if ran from command line
     cl_arguments = sys.argv[1:]
     print (cl_arguments)
