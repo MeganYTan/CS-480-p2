@@ -1,6 +1,8 @@
 from math import floor
 import sys
 import copy
+# import pandas
+import csv
 # OPTION 1 BRUTE FORCE
 def brute_force(matrix, count):
     print_matrx(matrix)
@@ -30,6 +32,7 @@ def find_next_empty(matrix):
 
 
 def is_valid(matrix, guess, row, col):
+    # check if valid in its current state
     # all rows must have different num
     if guess in matrix[row]:
         return False
@@ -113,26 +116,6 @@ def find_mrv_cell(empty_cells,domain):
     return min_cell
 
 
-# def forward_check(matrix, empty_cells, domain):
-#     new_domain = copy.deepcopy(domain)
-#     for cell in empty_cells:
-#         row, col = cell
-#         check_cell_domain = new_domain[(row, col)]
-#         for j in range(9):
-#             if matrix[row][j] in check_cell_domain:
-#                 check_cell_domain.remove(matrix[row][j])
-#         for i in range(9):
-#             if matrix[i][col] in check_cell_domain:
-#                 check_cell_domain.remove(matrix[i][col])
-#         box_row = (row // 3) * 3
-#         box_col = (col // 3) * 3
-#         for i in range(box_row, box_row + 3):
-#             for j in range(box_col, box_col + 3):
-#                 if matrix[i][j] in check_cell_domain:
-#                     check_cell_domain.remove(matrix[i][j])
-#         new_domain[(row, col)] = check_cell_domain
-#     return new_domain
-
 # forward check, take empty cell, row/col, domain, matrix
 def forward_check(matrix, empty_cells, domain, cell):
     new_domain = copy.deepcopy(domain)
@@ -159,7 +142,9 @@ def forward_check(matrix, empty_cells, domain, cell):
         new_domain[(check_cell_row, check_cell_col)] = check_cell_domain
     return new_domain
 
-
+def is_valid_mrv():
+    # domain cannot be empty
+    return True
 def mrv(matrix, empty_cells, domain, count):
     print_matrx(matrix)
     if not empty_cells:
@@ -172,15 +157,15 @@ def mrv(matrix, empty_cells, domain, count):
     col = cell[1]
     for value in cell_domain:
         #  place each value in the mrv cell and forward check
-        new_matrix = copy.deepcopy(matrix)
-        new_matrix[row][col] = value
-        new_empty_cells = empty_cells.copy()
-        new_empty_cells.remove(cell)
-        new_domain = forward_check(new_matrix, new_empty_cells, domain, cell)
-        if all(len(new_domain[cell]) > 0 for cell in new_empty_cells):
-            result = mrv(new_matrix, new_empty_cells, new_domain, count + 1)
+        matrix[row][col] = value
+        empty_cells.remove(cell)
+        new_domain = forward_check(matrix, empty_cells, domain, cell)
+        if is_valid_mrv():
+            result = mrv(matrix, empty_cells, new_domain, count + 1)
             if result:
                 return True, count
+            matrix[row][col] = 0
+            empty_cells.append(cell)
     return False, count
 
 def handle_mrv(matrix):
@@ -265,31 +250,43 @@ def print_cl_error():
     print("ERROR: Not enough/too many/illegal input arguments.")
     sys.exit()
 
-
-def input_to_matrix(input):
-    # input = '''X,6,X,2,X,4,X,5,X
-    # 4,7,X,X,6,X,X,8,3
-    # X,X,5,X,7,X,1,X,X
-    # 9,X,X,1,X,3,X,X,2
-    # X,1,2,X,X,X,3,4,X
-    # 6,X,X,7,X,9,X,X,8
-    # X,X,6,X,8,X,7,X,X
-    # 1,4,X,X,9,X,X,2,5
-    # X,8,X,3,X,5,X,9,X
-    # '''
-    replaced_input = input.replace('X', '0')
-    rows = replaced_input.split('\n')
-    for i in range(len(rows)):
-        rows[i] = rows[i].split(',')
-    return rows
-
+def init_matrix(input_file_name):
+    # read file and convert to matrix
+    file = open(input_file_name,mode="r")
+    matrix = []
+    for line in file:
+        replaced_line = line.replace('X', '0').replace('\n', '')
+        line_arr = replaced_line.split(',')
+        matrix.append(line_arr)
+    return matrix
 
 if __name__ == '__main__':
     algorithm = 3  # 1 brute, 2 CSP, 3 CSP MRV, 4 test
-    input_file = "N/A"
-
+    input_file = "testcase1.csv"
+    # matrix =[[1, 2, 3, 4, 5, 6, 7, 8, 9],
+    #          [4, 5, 6, 7, 8, 9, 1, 2, 3],
+    #          [7, 8, 9, 1, 2, 3, 4, 5, 6],
+    #          [2, 1, 4, 3, 6, 5, 8, 9, 7],
+    #          [3, 6, 5, 8, 9, 7, 2, 1, 4],
+    #          [8, 9, 7, 2, 1, 4, 3, 6, 5],
+    #          [5, 3, 1, 6, 4, 2, 9, 7, 8],
+    #          [6, 4, 2, 9, 7, 8, 5, 3, 1],
+    #          [9, 7, 8, 5, 3, 1, 6, 4, 2]]
+    # empty sudoku
+    matrix = [[2, 3, 0, 0, 0, 0, 0, 0, 0],
+              [0, 0, 0, 0, 0, 0, 0, 0, 0],
+              [0, 0, 0, 0, 0, 0, 0, 0, 0],
+              [0, 0, 0, 0, 0, 0, 0, 0, 0],
+              [0, 0, 0, 0, 0, 0, 0, 0, 0],
+              [0, 0, 0, 0, 0, 0, 0, 0, 0],
+              [0, 0, 0, 0, 0, 0, 0, 0, 0],
+              [0, 0, 0, 0, 0, 0, 0, 0, 0],
+              [0, 0, 0, 0, 0, 0, 0, 0, 0]
+              ]
+    matrix = init_matrix(input_file)
     # if ran from command line
     cl_arguments = sys.argv[1:]
+    print (cl_arguments)
     if len(cl_arguments) != 0:
         if len(cl_arguments) != 2:
             print_cl_error()
@@ -299,35 +296,9 @@ if __name__ == '__main__':
             if algorithm != "1" and algorithm != "2" and algorithm != "3" and algorithm != "4":
                 print_cl_error()
             else:
-                # read file and convert to matrix
-                file = open(input_file, 'r')
-                # convert to matrix
-                matrix = input_to_matrix(input)
+                matrix = init_matrix(input_file)
                 algorithm = int(algorithm)
 
-    else:
-        print("Not command line")
-        # completed sudoku
-        # matrix =[[1, 2, 3, 4, 5, 6, 7, 8, 9],
-        #          [4, 5, 6, 7, 8, 9, 1, 2, 3],
-        #          [7, 8, 9, 1, 2, 3, 4, 5, 6],
-        #          [2, 1, 4, 3, 6, 5, 8, 9, 7],
-        #          [3, 6, 5, 8, 9, 7, 2, 1, 4],
-        #          [8, 9, 7, 2, 1, 4, 3, 6, 5],
-        #          [5, 3, 1, 6, 4, 2, 9, 7, 8],
-        #          [6, 4, 2, 9, 7, 8, 5, 3, 1],
-        #          [9, 7, 8, 5, 3, 1, 6, 4, 2]]
-        # empty sudoku
-        matrix = [[2, 3, 0, 0, 0, 0, 0, 0, 0],
-                  [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                  [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                  [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                  [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                  [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                  [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                  [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                  [0, 0, 0, 0, 0, 0, 0, 0, 0]
-                  ]
     print_details(algorithm, input_file)
     print_matrx(matrix)
     if algorithm == 1:
