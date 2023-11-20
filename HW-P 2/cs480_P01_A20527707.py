@@ -101,28 +101,16 @@ def find_cell_domain(matrix, row_index, col_index,):
 
 # domain is a 9x9 matrix corresponding to each cell in the sudoku grid
 # mrv cell is the one with the least numbers in the domain
-def find_mrv_cell(domain):
+def find_mrv_cell(empty_cells,domain):
     min = 10 # max 9 option so set min to 10
     min_cell = None
     # iterate through
-    for row_index in range(len(domain)):
-        for col_index in range(len(domain[row_index])):
-            cell_domain = domain[row_index][col_index]
-            if len(cell_domain) < min:
-                min = len(cell_domain)
-                min_cell = (row_index,col_index)
+    for cell in empty_cells:
+        cell_domain = domain[cell]
+        if len(cell_domain) < min:
+            min = len(cell_domain)
+            min_cell = cell
     return min_cell
-
-
-# #return matrix in the size of sudoku matrix that is the domain for each cell
-def find_cell_domains(matrix):
-    domain = [[set(range(1, 10)) for _ in range(9)] for _ in range(9)]
-    for row_index in range(len(matrix)):
-        for col_index in range(len(matrix[row_index])):
-            if matrix[row_index][col_index] != 0:
-                eliminate_possibilities(matrix, domain, row_index, col_index, matrix[row_index][col_index])
-    return domain
-
 
 
 def forward_check(matrix, empty_cells, domain):
@@ -148,29 +136,32 @@ def forward_check(matrix, empty_cells, domain):
         new_domain[(row, col)] = values
     return new_domain
 
-def mrv(matrix, domain, count):
+def mrv(matrix, empty_cells, domain, count):
     print_matrx(matrix)
-    mrv_cell = find_mrv_cell(domain)
-    if mrv_cell is None:
-        # matrix is full
+    if not empty_cells:
+        # solved
         return True, count
-    row_index = mrv_cell[0]
-    col_index = mrv_cell[1]
-    cell_domain = domain[row_index][col_index].copy()
+    cell = find_mrv_cell(empty_cells, domain)
+    cell_domain = domain[cell]
     for value in cell_domain:
-        if is_valid_with_domain(domain, row_index, col_index, value):
-            matrix[row_index][col_index] = value
-            saved_domain = [row.copy() for row in domain]
-            eliminate_possibilities(matrix, domain, row_index, col_index, value)
-
-            can_solve, count = mrv(matrix, domain, count+1)
-            if can_solve:
+        #  place each value in the mrv cell and forward check
+        new_matrix = copy.deepcopy(matrix)
+        new_matrix[cell[0]][cell[1]] = value
+        new_empty_cells = empty_cells.copy()
+        new_empty_cells.remove(cell)
+        new_domain = forward_check(new_matrix, new_empty_cells, domain)
+        if all(len(new_domain[cell]) > 0 for cell in new_empty_cells):
+            result = mrv(new_matrix, new_empty_cells, new_domain, count + 1)
+            if result:
                 return True, count
-
-            domain[row_index][col_index] = 0  # Backtrack
-            domain = saved_domain  # Restore possibilities
-
     return False, count
+
+def handle_mrv(matrix):
+    empty_cells = find_all_empty(matrix)
+    domain = {}
+    for cell in empty_cells:
+        domain[cell] = find_cell_domain(matrix, cell[0], cell[1])
+    return mrv(matrix, empty_cells, domain, 0)
 
 # OPTION 4 CHECK
 def check_correct(matrix):
@@ -278,7 +269,7 @@ if __name__ == '__main__':
         else:
             algorithm = cl_arguments[0]
             input_file = cl_arguments[1]
-            if (algorithm != "1" and algorithm != "2" and algorithm != "3" and algorithm != "4"):
+            if algorithm != "1" and algorithm != "2" and algorithm != "3" and algorithm != "4":
                 print_cl_error()
             else:
                 # read file and convert to matrix
@@ -300,7 +291,7 @@ if __name__ == '__main__':
         #          [6, 4, 2, 9, 7, 8, 5, 3, 1],
         #          [9, 7, 8, 5, 3, 1, 6, 4, 2]]
         # empty sudoku
-        matrix = [[0, 0, 0, 0, 0, 0, 0, 0, 0],
+        matrix = [[2, 3, 0, 0, 0, 0, 0, 0, 0],
                   [0, 0, 0, 0, 0, 0, 0, 0, 0],
                   [0, 0, 0, 0, 0, 0, 0, 0, 0],
                   [0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -318,8 +309,7 @@ if __name__ == '__main__':
         is_solvable, count = backtracking(matrix, 0)
         print(count)
     elif algorithm == 3:
-        domain = find_cell_domains(matrix)
-        is_solvable, count = mrv(matrix,domain,0)
+        is_solvable, count = handle_mrv(matrix)
         print(count)
     elif algorithm == 4:
         corr = check_correct(matrix)
