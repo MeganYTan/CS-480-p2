@@ -113,43 +113,70 @@ def find_mrv_cell(empty_cells,domain):
     return min_cell
 
 
-def forward_check(matrix, empty_cells, domain):
+# def forward_check(matrix, empty_cells, domain):
+#     new_domain = copy.deepcopy(domain)
+#     for cell in empty_cells:
+#         row, col = cell
+#         check_cell_domain = new_domain[(row, col)]
+#         for j in range(9):
+#             if matrix[row][j] in check_cell_domain:
+#                 check_cell_domain.remove(matrix[row][j])
+#         for i in range(9):
+#             if matrix[i][col] in check_cell_domain:
+#                 check_cell_domain.remove(matrix[i][col])
+#         box_row = (row // 3) * 3
+#         box_col = (col // 3) * 3
+#         for i in range(box_row, box_row + 3):
+#             for j in range(box_col, box_col + 3):
+#                 if matrix[i][j] in check_cell_domain:
+#                     check_cell_domain.remove(matrix[i][j])
+#         new_domain[(row, col)] = check_cell_domain
+#     return new_domain
+
+# forward check, take empty cell, row/col, domain, matrix
+def forward_check(matrix, empty_cells, domain, cell):
     new_domain = copy.deepcopy(domain)
-    for cell in empty_cells:
-        row, col = cell
-        values = new_domain[(row, col)]
-        # Check row
-        for j in range(9):
-            if matrix[row][j] in values:
-                values.remove(matrix[row][j])
-        # Check column
-        for i in range(9):
-            if matrix[i][col] in values:
-                values.remove(matrix[i][col])
-        # Check box
-        box_row = (row // 3) * 3
-        box_col = (col // 3) * 3
+    cell_row = cell[0]
+    cell_col = cell[1]
+    value_to_remove = matrix[cell_row][cell_col]
+    for check_cell in empty_cells:
+        check_cell_row = check_cell[0]
+        check_cell_col = check_cell[1]
+        check_cell_domain = new_domain[(check_cell_row, check_cell_col)]
+        # check row
+        if check_cell_row == cell_row and value_to_remove in check_cell_domain:
+           check_cell_domain.remove(value_to_remove)
+        # check col
+        if check_cell_col == cell_col and value_to_remove in check_cell_domain:
+            check_cell_domain.remove(value_to_remove)
+        # check box
+        box_row = (cell_row // 3) * 3
+        box_col = (cell_col // 3) * 3
         for i in range(box_row, box_row + 3):
-            for j in range(box_col, box_col + 3):
-                if matrix[i][j] in values:
-                    values.remove(matrix[i][j])
-        new_domain[(row, col)] = values
+            for j in range(box_col, box_col+3):
+                if check_cell_row == i and check_cell_col == j and value_to_remove in check_cell_domain:
+                    check_cell_domain.remove(value_to_remove)
+        new_domain[(check_cell_row, check_cell_col)] = check_cell_domain
     return new_domain
+
 
 def mrv(matrix, empty_cells, domain, count):
     print_matrx(matrix)
     if not empty_cells:
         # solved
         return True, count
+    # find mrv
     cell = find_mrv_cell(empty_cells, domain)
     cell_domain = domain[cell]
+    row = cell[0]
+    col = cell[1]
     for value in cell_domain:
         #  place each value in the mrv cell and forward check
         new_matrix = copy.deepcopy(matrix)
-        new_matrix[cell[0]][cell[1]] = value
+        new_matrix[row][col] = value
         new_empty_cells = empty_cells.copy()
         new_empty_cells.remove(cell)
-        new_domain = forward_check(new_matrix, new_empty_cells, domain)
+        new_domain = forward_check(new_matrix, new_empty_cells, domain, cell)
         if all(len(new_domain[cell]) > 0 for cell in new_empty_cells):
             result = mrv(new_matrix, new_empty_cells, new_domain, count + 1)
             if result:
